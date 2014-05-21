@@ -21,6 +21,7 @@ describe Omnibus::Software do
     before do
       stub_const("File::PATH_SEPARATOR", separator)
       ENV.stub(:[]).and_call_original
+      ENV.stub(:keys).and_return(["PATH"])
       ENV.stub(:[]).with("PATH").and_return(path)
     end
 
@@ -44,23 +45,59 @@ describe Omnibus::Software do
 
     context "on Windows" do
       before do
+        stub_ohai(platform: 'windows')
         project.stub(:install_path).and_return("c:/monkeys")
+        ENV.stub(:[]).with("Path").and_return(windows_path)
       end
 
       let(:separator) { ";" }
       let(:path) { "c:/Ruby193/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem" }
+      let(:windows_path) { "c:/Ruby999/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem" }
 
-      it "prepends a path to PATH" do
-        expect(software.prepend_path("c:/foo/bar")).to eq("c:/foo/bar;c:/Ruby193/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem")
-      end
+      context "when PATH is first" do
+        before do
+          ENV.stub(:keys).and_return(["PATH", "Path"])
+        end
 
-      it "prepends the embedded bin to PATH" do
-        expect(software.path_with_embedded).to eq("c:/monkeys/bin;c:/monkeys/embedded/bin;c:/Ruby193/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem")
-      end
+        it "sets the path key to PATH" do
+          expect(software.path_key).to eq("PATH")
+        end
 
-      it "prepends multiple paths to PATH" do
-        expect(software.prepend_path("c:/foo/bar", "c:/foo/baz"))
+        it "prepends a path to PATH" do
+          expect(software.prepend_path("c:/foo/bar")).to eq("c:/foo/bar;c:/Ruby193/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem")
+        end
+
+        it "prepends the embedded bin to PATH" do
+          expect(software.path_with_embedded).to eq("c:/monkeys/bin;c:/monkeys/embedded/bin;c:/monkeys/embedded/mingw/bin;c:/Ruby193/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem")
+        end
+
+        it "prepends multiple paths to PATH" do
+          expect(software.prepend_path("c:/foo/bar", "c:/foo/baz"))
           .to eq("c:/foo/bar;c:/foo/baz;c:/Ruby193/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem")
+        end
+      end
+
+      context "when Path is first" do
+        before do
+          ENV.stub(:keys).and_return(["Path", "PATH"])
+        end
+
+        it "sets the path key to PATH" do
+          expect(software.path_key).to eq("Path")
+        end
+
+        it "prepends a path to PATH" do
+          expect(software.prepend_path("c:/foo/bar")).to eq("c:/foo/bar;c:/Ruby999/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem")
+        end
+
+        it "prepends the embedded bin to PATH" do
+          expect(software.path_with_embedded).to eq("c:/monkeys/bin;c:/monkeys/embedded/bin;c:/monkeys/embedded/mingw/bin;c:/Ruby999/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem")
+        end
+
+        it "prepends multiple paths to PATH" do
+          expect(software.prepend_path("c:/foo/bar", "c:/foo/baz"))
+          .to eq("c:/foo/bar;c:/foo/baz;c:/Ruby999/bin;c:/Windows/system32;c:/Windows;c:/Windows/System32/Wbem")
+        end
       end
     end
   end

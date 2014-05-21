@@ -481,7 +481,34 @@ module Omnibus
     #
     # @return [String]
     def path_with_embedded
-      prepend_path("#{install_dir}/bin", "#{install_dir}/embedded/bin")
+      if platform == "windows"
+        # on windows embedded/mingw/bin should contain our devkit with gcc and "build-essential" stuff
+        prepend_path("#{install_dir}/bin", "#{install_dir}/embedded/bin", "#{install_dir}/embedded/mingw/bin")
+      else
+        prepend_path("#{install_dir}/bin", "#{install_dir}/embedded/bin")
+      end
+    end
+
+    # On windows, depending on which shell we use the path environment variable
+    # can be "PATH" or "Path".  If both are set, then only one is honored.
+    # This is a helper to find the right one for us.
+    #
+    # We deliberately use insertion sort ordering of ruby 1.9 hashes.  We expect
+    # that either we were passed "PATH" or "Path" by the shell that invoked omnibus
+    # correctly.  We detect that someone effed up and added the wrong one because
+    # it comes second, so we trust the first.  If both are set by the calling shell
+    # then we may be confused, and omnibus needs to be invoked with only the
+    # right one.
+    #
+    # (facepalm)
+    #
+    # @return [String]
+    def path_key
+      if platform == "windows"
+        ENV.keys.grep(/\Apath\Z/i).first
+      else
+        "PATH"
+      end
     end
 
     # A PATH variable format string representing the current PATH with the
@@ -493,7 +520,7 @@ module Omnibus
     # @return [String]
     def prepend_path(*paths)
       path_values = Array(paths)
-      path_values << ENV['PATH']
+      path_values << ENV[path_key]
 
       separator = File::PATH_SEPARATOR || ':'
       path_values.join(separator)
