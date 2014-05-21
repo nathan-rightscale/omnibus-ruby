@@ -56,7 +56,7 @@ describe Omnibus::Software do
 
       context "when PATH is first" do
         before do
-          ENV.stub(:keys).and_return(%w{PATH Path}])
+          ENV.stub(:keys).and_return(%w(PATH Path))
         end
 
         it "sets the path key to PATH" do
@@ -79,7 +79,7 @@ describe Omnibus::Software do
 
       context "when Path is first" do
         before do
-          ENV.stub(:keys).and_return(%w{Path PATH})
+          ENV.stub(:keys).and_return(%w(Path PATH))
         end
 
         it "sets the path key to PATH" do
