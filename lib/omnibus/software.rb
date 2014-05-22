@@ -481,31 +481,20 @@ module Omnibus
     #
     # @return [String]
     def path_with_embedded
-      if platform == "windows"
-        # on windows embedded/mingw/bin should contain our devkit with gcc and "build-essential" stuff
-        prepend_path("#{install_dir}/bin", "#{install_dir}/embedded/bin", "#{install_dir}/embedded/mingw/bin")
-      else
-        prepend_path("#{install_dir}/bin", "#{install_dir}/embedded/bin")
-      end
+      prepend_path("#{install_dir}/bin", "#{install_dir}/embedded/bin")
     end
 
-    # On windows, depending on which shell we use the path environment variable
-    # can be "PATH" or "Path".  If both are set, then only one is honored.
-    # This is a helper to find the right one for us.
+    # Windows has some ENV['PATH'] vs. ENV['Path'] confusion.  If you
+    # set ENV['PATH'] that one will take precidence, but the ruby devkit will
+    # add the gcc binaries to ENV['Path'] and then your compiles will fail
+    # when you can't find gcc.
     #
-    # We deliberately use insertion sort ordering of ruby 1.9 hashes.  We expect
-    # that either we were passed "PATH" or "Path" by the shell that invoked omnibus
-    # correctly.  We detect that someone effed up and added the wrong one because
-    # it comes second, so we trust the first.  If both are set by the calling shell
-    # then we may be confused, and omnibus needs to be invoked with only the
-    # right one.
-    #
-    # (facepalm)
+    # You may also want to ENV.delete('PATH') to nuke it from orbit.
     #
     # @return [String]
     def path_key
       if platform == "windows"
-        ENV.keys.grep(/\Apath\Z/i).first
+        "Path"
       else
         "PATH"
       end
