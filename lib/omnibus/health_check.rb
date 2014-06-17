@@ -24,7 +24,7 @@ module Omnibus
       /libcrypt\.so/,
       /libdl/,
       /libfreebl\d\.so/,
-      /libgcc_s\.so/,
+      /libgcc_s\.so+/,
       /libm\.so/,
       /libnsl\.so/,
       /libpthread/,
